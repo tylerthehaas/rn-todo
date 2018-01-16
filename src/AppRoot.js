@@ -13,14 +13,31 @@ export default class AppRoot extends Component {
     }
   }
 
+  componentWillMount() {
+    fetch('http://10.0.0.180:3000/todos')
+      .then(res => res.json())
+      .then(data => {
+        console.log({ data })
+        const todos = data.map(todo => Object.assign(todo, { key: todo.id }))
+        this.setState({ todos }, () => console.log(this.state))
+      })
+      .catch(console.log)
+  }
+
   addTodoHandler = () => {
-    const { inputText: text } = this.state
+    const { inputText: text, todos: oldTodos } = this.state
     if (!text) return
-    const todos = [...this.state.todos, { key: Date.now(), text }]
-    console.log({ todos })
-    this.setState({ todos, inputText: '' }, () => {
-      console.log(this.state)
+    fetch('http://10.0.0.180:3000/todos', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+      headers: { 'Content-Type': 'application/json' },
     })
+      .then(res => res.json())
+      .then(data => {
+        const todos = [...oldTodos, Object.assign(data, { key: data.id })]
+        this.setState({ todos, inputText: '' })
+      })
+      .catch(console.log)
   }
 
   inputTextHandler = inputText => {
@@ -39,7 +56,7 @@ export default class AppRoot extends Component {
         <FlatList
           data={todos}
           renderItem={({ item }) => (
-            <Item style={styles.container.item} text={item.text} />
+            <Item style={styles.container.item} text={item.name} />
           )}
         />
       </View>
@@ -55,8 +72,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   item: {
-    padding: 10,
     fontSize: 18,
-    height: 44,
   },
 })
